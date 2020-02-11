@@ -258,10 +258,17 @@ resource "aws_autoscaling_group" "asg" {
 }
 // cloudposse/terraform-aws-ec2-autoscale-group
 // https://github.com/cloudposse/terraform-aws-ec2-autoscale-group を参考にした
-resource "aws_autoscaling_policy" "asg_scaling_policy" {
-  name                   = "${var.project_name}-asg-scaling-policy"
+resource "aws_autoscaling_policy" "asg_scaling_policy_scale_up" {
+  name                   = "${var.project_name}-asg-scaling-policy-scale-up"
   autoscaling_group_name = aws_autoscaling_group.asg.name
   scaling_adjustment     = 1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300
+}
+resource "aws_autoscaling_policy" "asg_scaling_policy_scale_down" {
+  name                   = "${var.project_name}-asg-scaling-policy-scale-down"
+  autoscaling_group_name = aws_autoscaling_group.asg.name
+  scaling_adjustment     = -1
   adjustment_type        = "ChangeInCapacity"
   cooldown               = 300
 }
@@ -280,7 +287,7 @@ resource "aws_cloudwatch_metric_alarm" "asg_scale_up_alarm" {
   }
 
   alarm_description = "${var.project_name}-asg-alarm"
-  alarm_actions     = [aws_autoscaling_policy.asg_scaling_policy.arn]
+  alarm_actions     = [aws_autoscaling_policy.asg_scaling_policy_scale_up.arn]
 }
 resource "aws_cloudwatch_metric_alarm" "asg_scale_down_alarm" {
   alarm_name          = "${var.project_name}-asg-scale-down-alarm"
@@ -297,5 +304,5 @@ resource "aws_cloudwatch_metric_alarm" "asg_scale_down_alarm" {
   }
 
   alarm_description = "${var.project_name}-asg-alarm"
-  alarm_actions     = [aws_autoscaling_policy.asg_scaling_policy.arn]
+  alarm_actions     = [aws_autoscaling_policy.asg_scaling_policy_scale_down.arn]
 }
