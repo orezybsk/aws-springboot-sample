@@ -226,7 +226,8 @@ resource "aws_autoscaling_group" "asg" {
   health_check_type         = "ELB"
   force_delete              = true
 
-  desired_capacity = 1
+  // https://www.terraform.io/docs/providers/aws/r/autoscaling_group.html#waiting-for-capacity 参照
+  desired_capacity = 2
   max_size         = 4
   min_size         = 0
 
