@@ -229,7 +229,7 @@ resource "aws_autoscaling_group" "asg" {
   // https://www.terraform.io/docs/providers/aws/r/autoscaling_group.html#waiting-for-capacity 参照
   desired_capacity = 2
   max_size         = 4
-  min_size         = 0
+  min_size         = 2
 
   // たぶんこれを入れると EC2 Instance 起動・停止時に SNS で通知できるはず
   // https://underthehood.meltwater.com/blog/2020/02/07/dynamic-route53-records-for-aws-auto-scaling-groups-with-terraform/
