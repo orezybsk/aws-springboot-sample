@@ -3,3 +3,7 @@
 variable "project_name" {}
 variable "key_name" {}
 variable "alb_access_logs_bucket_name" {}
+variable "db_username" {}
+variable "db_password_tmp" {}
+variable "db_password" {}
+variable "db_port" {}
