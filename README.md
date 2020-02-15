@@ -10,3 +10,10 @@ AWS で EC2＋RDS＋ElastiCache 構成のサンプルを作成する
 * main.tf, asg-ec2.tf に VPC, IGW, Subnet, Route Table, VPC Endpoint, ALB, ASG+EC2 を定義する。
 * rds.tf に RDS(MySQL) を定義する。
 * elasticache.tf に ElastiCache(Redis) を定義する。
+
+## 残件
+
+* ElastiCache(Redis)は、
+  * CPU使用率、メモリ使用量を監視してアラームを送信するようにしたい。
+  * 通信も SSL にしたい。
+  * https://github.com/azavea/terraform-aws-redis-elasticache を参考にする？

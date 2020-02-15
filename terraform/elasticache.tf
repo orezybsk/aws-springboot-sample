@@ -35,17 +35,22 @@ resource "aws_elasticache_replication_group" "example" {
   // https://docs.aws.amazon.com/ja_jp/AmazonElastiCache/latest/red-ug/ParameterGroups.Redis.html#ParameterGroups.Redis.NodeSpecific
   node_type                  = "cache.m3.medium"
   port                       = var.redis_port
-  parameter_group_name       = "default.redis5.0"
+  // default を使うべきか aws_elasticache_parameter_group で独自定義すべきか、よく分からない。。。
+  parameter_group_name       = "default.redis5.0.cluster.on"
   automatic_failover_enabled = true
-  number_cache_clusters      = 3
   subnet_group_name          = aws_elasticache_subnet_group.this.name
   snapshot_window            = "17:10-18:10"
   snapshot_retention_limit   = 7
   maintenance_window         = "Mon:18:10-Mon:19:10"
   apply_immediately          = false
   security_group_ids         = [aws_security_group.sg_redis.id]
+
+  cluster_mode {
+    replicas_per_node_group = 1
+    num_node_groups         = 2
+  }
 }
 
 // インストール後 Public Subnet 内の EC2 Instance で以下のコマンドを実行して動作確認する
-// sudo amazon-linux-extras install redis4.0
-// redis-cli -h <endpoint> -p 6379
+// sudo amazon-linux-extras install redis4.0 -y
+// redis-cli -h <endpoint> -p 6379 -c
