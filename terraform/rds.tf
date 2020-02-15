@@ -127,13 +127,6 @@ resource "aws_db_instance" "this" {
   }
 
 }
-// 上で設定した password は tfstate に残るので、リソース作成後に aws コマンドで変更する
-output "modify_db_password_command" {
-  value = format("aws-vault exec $AWS_PROFILE -- bash -c \"aws rds modify-db-instance --apply-immediately --db-instance-identifier %s --master-user-password '%s'\"",
-    aws_db_instance.this.identifier,
-    var.db_password
-  )
-}
 
 // インストール後 Public Subnet 内の EC2 Instance で以下のコマンドを実行して動作確認する
 // sudo yum localinstall https://dev.mysql.com/get/mysql80-community-release-el7-1.noarch.rpm -y
