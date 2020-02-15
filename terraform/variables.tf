@@ -8,3 +8,6 @@ variable "db_password_tmp" {}
 variable "db_password" {}
 variable "db_port" {}
 variable "redis_port" {}
+
+variable "create_rds" {}
+variable "create_elasticache" {}

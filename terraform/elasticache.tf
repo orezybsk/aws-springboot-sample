@@ -7,6 +7,8 @@
 // https://github.com/terraform-community-modules/tf_aws_elasticache_redis
 // ※作成中に見つけたのでメモ書きしておく。
 resource "aws_security_group" "sg_redis" {
+  count = var.create_elasticache ? 1 : 0
+
   name   = "${var.project_name}-sg-redis"
   vpc_id = aws_vpc.vpc.id
 
@@ -25,16 +27,20 @@ resource "aws_security_group" "sg_redis" {
   }
 }
 resource "aws_elasticache_subnet_group" "this" {
+  count = var.create_elasticache ? 1 : 0
+
   name       = "${var.project_name}-redis-subnet-group"
   subnet_ids = [aws_subnet.private_0.id, aws_subnet.private_1.id]
 }
 resource "aws_elasticache_replication_group" "example" {
+  count = var.create_elasticache ? 1 : 0
+
   replication_group_id          = "${var.project_name}-rep-group"
   replication_group_description = "${var.project_name} replication group"
   // Redis のノードタイプ固有のパラメータ
   // https://docs.aws.amazon.com/ja_jp/AmazonElastiCache/latest/red-ug/ParameterGroups.Redis.html#ParameterGroups.Redis.NodeSpecific
-  node_type                  = "cache.m3.medium"
-  port                       = var.redis_port
+  node_type = "cache.m3.medium"
+  port      = var.redis_port
   // default を使うべきか aws_elasticache_parameter_group で独自定義すべきか、よく分からない。。。
   parameter_group_name       = "default.redis5.0.cluster.on"
   automatic_failover_enabled = true

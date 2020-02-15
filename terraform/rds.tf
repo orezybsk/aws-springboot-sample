@@ -5,6 +5,8 @@
 // https://qiita.com/2no553/items/952dbb8df9a228195189
 //
 resource "aws_security_group" "sg_db" {
+  count = var.create_rds ? 1 : 0
+
   name   = "${var.project_name}-sg-db"
   vpc_id = aws_vpc.vpc.id
 
@@ -23,6 +25,8 @@ resource "aws_security_group" "sg_db" {
   }
 }
 resource "aws_db_parameter_group" "this" {
+  count = var.create_rds ? 1 : 0
+
   name   = "${var.project_name}-db-parameter-group"
   family = "mysql5.7"
 
@@ -81,10 +85,14 @@ resource "aws_db_parameter_group" "this" {
 //  }
 //}
 resource "aws_db_subnet_group" "this" {
+  count = var.create_rds ? 1 : 0
+
   name       = "${var.project_name}-db-subnet-group"
   subnet_ids = [aws_subnet.private_0.id, aws_subnet.private_1.id]
 }
 resource "aws_db_instance" "this" {
+  count = var.create_rds ? 1 : 0
+
   identifier = "${var.project_name}-db"
   engine     = "mysql"
   // Amazon RDS での MySQL
