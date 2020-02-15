@@ -92,8 +92,8 @@ resource "aws_db_instance" "this" {
   engine_version = "5.7.26"
   // DB インスタンスクラスの選択
   // https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/UserGuide/Concepts.DBInstanceClass.html
-  // instance_class = "db.t3.small"
-  instance_class        = "db.t3.xlarge"
+  instance_class = "db.t3.small"
+  // instance_class = "db.t3.xlarge"
   allocated_storage     = 20
   max_allocated_storage = 100
   storage_type          = "gp2"
