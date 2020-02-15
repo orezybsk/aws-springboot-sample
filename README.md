@@ -8,3 +8,5 @@ AWS で EC2＋RDS＋ElastiCache 構成のサンプルを作成する
 * AWS Management Console にログインして、作成した IAM User の ACCESS_KEY_ID, SECRET_ACCESS_KEY を作成し、MFA を設定する。
 * https://ksby.hatenablog.com/entry/2020/01/19/031546 を参考に設定する。
 * main.tf, asg-ec2.tf に VPC, IGW, Subnet, Route Table, VPC Endpoint, ALB, ASG+EC2 を定義する。
+* rds.tf に RDS(MySQL) を定義する。
+* elasticache.tf に ElastiCache(Redis) を定義する。
