@@ -126,9 +126,8 @@ resource "aws_db_instance" "this" {
     ignore_changes = [password]
   }
 
-  // 上で設定した password は tfstate に残るので、リソース作成後に aws コマンドで変更する
-  // aws-vault exec $AWS_PROFILE -- bash -c "aws rds modify-db-instance --apply-immediately --db-instance-identifier <aws_db_instance.this.identifier> --master-user-password '<var.db_password>'"
 }
+// 上で設定した password は tfstate に残るので、リソース作成後に aws コマンドで変更する
 output "modify_db_password_command" {
   value = format("aws-vault exec $AWS_PROFILE -- bash -c \"aws rds modify-db-instance --apply-immediately --db-instance-identifier %s --master-user-password '%s'\"",
     aws_db_instance.this.identifier,
