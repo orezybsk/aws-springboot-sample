@@ -34,7 +34,7 @@ data "aws_iam_policy" "ec2_for_ssm" {
   arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 resource "aws_iam_role" "ec2_for_ssm" {
-  name               = "ec2-for-ssm"
+  name               = "${var.project_name}-ec2-for-ssm"
   assume_role_policy = data.aws_iam_policy_document.ec2_for_ssm.json
 }
 resource "aws_iam_role_policy_attachment" "ec2_for_ssm" {
@@ -42,7 +42,7 @@ resource "aws_iam_role_policy_attachment" "ec2_for_ssm" {
   role       = aws_iam_role.ec2_for_ssm.name
 }
 resource "aws_iam_instance_profile" "ec2_for_ssm" {
-  name = "ec2-for-ssm"
+  name = "${var.project_name}-ec2-for-ssm"
   role = aws_iam_role.ec2_for_ssm.name
 }
 
