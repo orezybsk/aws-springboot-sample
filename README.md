@@ -17,3 +17,4 @@ AWS で EC2＋RDS＋ElastiCache 構成のサンプルを作成する
   * CPU使用率、メモリ使用量を監視してアラームを送信するようにしたい。
   * 通信も SSL にしたい。
   * https://github.com/azavea/terraform-aws-redis-elasticache を参考にする？
+* ASG, RDS, ElastiCache の監視アラームを SNS で送信するようにしたい。
