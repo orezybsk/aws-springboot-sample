@@ -124,16 +124,22 @@ resource "aws_db_instance" "this" {
   final_snapshot_identifier = "${var.project_name}-db-final-snapshot"
   port                      = var.db_port
   apply_immediately         = false
-  vpc_security_group_ids    = [aws_security_group.sg_db.id]
-  parameter_group_name      = aws_db_parameter_group.this.name
+  vpc_security_group_ids    = [aws_security_group.sg_db[count.index].id]
+  parameter_group_name      = aws_db_parameter_group.this[count.index].name
   // ※翌日にならないと destroy が成功しなくなるので、aws_db_option_group はコメントアウトする。必要に応じて解除すること。
   // option_group_name = aws_db_option_group.this.name
-  db_subnet_group_name = aws_db_subnet_group.this.name
+  db_subnet_group_name = aws_db_subnet_group.this[count.index].name
 
   lifecycle {
     ignore_changes = [password]
   }
 
+  provisioner "local-exec" {
+    command = format("echo 'modify_db_password_command: aws-vault exec $AWS_PROFILE -- bash -c \"aws rds modify-db-instance --apply-immediately --db-instance-identifier %s --master-user-password '%s'\"'",
+      aws_db_instance.this[count.index].identifier,
+      var.db_password
+    )
+  }
 }
 
 // インストール後 Public Subnet 内の EC2 Instance で以下のコマンドを実行して動作確認する
