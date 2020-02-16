@@ -27,6 +27,8 @@ public class WebSecurityConfig {
                     // .antMatchers("/country/**").permitAll()
                     .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                     .antMatchers("/sample/**").permitAll()
+                    .antMatchers("/html/**").permitAll()
+                    .antMatchers("/vendor/**").permitAll()
                     .anyRequest().hasAnyRole("USER");
         }
 

@@ -47,3 +47,7 @@ terraform.tfvars
 
 # Ignore docker
 docker/mysql/data
+
+# Ignore node.js, npm
+node_modules/
+sample-webapp/src/main/resources/static/vendor/

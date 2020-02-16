@@ -1,0 +1,32 @@
+{
+  "name": "aws-springboot-sample",
+  "version": "1.0.0",
+  "description": "AWS で EC2＋RDS＋ElastiCache 構成のサンプルを作成する",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "copy:all": "run-p copy:bootstrap copy:admin-lte copy:jquery copy:font-awesome",
+    "copy:bootstrap": "cpx node_modules/bootstrap/dist/**/* sample-webapp/src/main/resources/static/vendor/bootstrap",
+    "copy:admin-lte": "cpx node_modules/admin-lte/dist/**/* sample-webapp/src/main/resources/static/vendor/admin-lte",
+    "copy:jquery": "cpx node_modules/admin-lte/plugins/jquery/**/* sample-webapp/src/main/resources/static/vendor/jquery",
+    "copy:font-awesome": "cpx node_modules/font-awesome/{css,fonts}/**/* sample-webapp/src/main/resources/static/vendor/font-awesome"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orezybsk/aws-springboot-sample.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/orezybsk/aws-springboot-sample/issues"
+  },
+  "homepage": "https://github.com/orezybsk/aws-springboot-sample#readme",
+  "devDependencies": {
+    "admin-lte": "^3.0.2",
+    "bootstrap": "^4.4.1",
+    "cpx": "^1.5.0",
+    "font-awesome": "^4.7.0",
+    "npm-run-all": "^4.1.5"
+  }
+}
