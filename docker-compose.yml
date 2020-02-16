@@ -1,6 +1,9 @@
 version: '3'
 
 services:
+  #############################################################################
+  # MySQL
+  #
   # 起動したコンテナに /bin/sh でアクセスする場合には以下のコマンドを実行する
   # docker exec -it mysql bash
   mysql:
@@ -17,6 +20,9 @@ services:
       - ./docker/mysql/data:/var/lib/mysql
       - ./sample-webapp/src/main/resources/db/init/create_database.sql:/docker-entrypoint-initdb.d/create_database.sql
 
+  #############################################################################
+  # adminer
+  #
   # URL
   # http://localhost:9080/
   adminer:
@@ -189,3 +195,27 @@ services:
       - redis-cluster-4
       - redis-cluster-5
       - redis-cluster-6
+
+  #############################################################################
+  # Flyway
+  #
+  flyway:
+    image: flyway/flyway:${FLYWAY_VERSION}-alpine
+    container_name: flyway
+    environment:
+      - TZ=Asia/Tokyo
+    volumes:
+      - ./sample-webapp/src/main/resources/db/migration:/flyway/sql
+    command: -url=${FLYWAY_URL} -user=${FLYWAY_USER} -password=${FLYWAY_PASSWORD} -connectRetries=60 migrate
+    depends_on:
+      - mysql
+    # 下の３行は debug 用
+    # うまく動かない時はコメントアウトを解除、上の command をコメントアウトした後、
+    # docker exec -it flyway /bin/sh
+    # で接続してから
+    # flyway <command に記述した文字列>
+    # を実行してみる
+    #
+    # entrypoint: /bin/sh
+    # stdin_open: true
+    # tty: true
