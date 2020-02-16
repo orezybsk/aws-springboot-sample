@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  # 起動したコンテナに /bin/sh でアクセスする場合には以下のコマンドを実行する
+  # docker exec -it mysql bash
+  mysql:
+    image: mysql:${MYSQL_VERSION}
+    container_name: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      - TZ=Asia/Tokyo
+      - MYSQL_ROOT_PASSWORD=xxxxxxxx
+    volumes:
+      - ./docker/mysql/data:/var/lib/mysql
+      - ./sample-webapp/src/main/resources/db/init/create_database.sql:/docker-entrypoint-initdb.d/create_database.sql
+
+  # URL
+  # http://localhost:9080/
+  adminer:
+    image: adminer:${ADMINER_VERSION}
+    container_name: adminer
+    restart: always
+    ports:
+      - 9080:8080
+    environment:
+      - TZ=Asia/Tokyo
+      - ADMINER_DEFAULT_SERVER=mysql
+
+  # 起動したコンテナに /bin/sh でアクセスする場合には以下のコマンドを実行する
+  # docker exec -it redis bash
+  redis:
+    image: redis:${REDIS_VERSION}
+    container_name: redis
+    ports:
+      - "6379:6379"

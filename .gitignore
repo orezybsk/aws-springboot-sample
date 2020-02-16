@@ -44,3 +44,6 @@ terraform.tfvars
 
 # Ignore direnv
 .envrc
+
+# Ignore docker
+docker/mysql/data
