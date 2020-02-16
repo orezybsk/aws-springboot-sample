@@ -1,0 +1,310 @@
+buildscript {
+    ext {
+        group "ksbysample"
+        version "2.2.4-RELEASE"
+    }
+    repositories {
+        mavenCentral()
+        maven { url "https://repo.spring.io/release/" }
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id "java"
+    id "eclipse"
+    id "idea"
+    id "org.springframework.boot" version "2.2.4.RELEASE"
+    id "io.spring.dependency-management" version "1.0.9.RELEASE"
+    id "groovy"
+    id "checkstyle"
+    id "com.github.spotbugs" version "3.0.0"
+    id "pmd"
+    id "net.ltgt.errorprone" version "1.1.1"
+    id "com.gorylenko.gradle-git-properties" version "2.2.1"
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+[compileJava, compileTestGroovy, compileTestJava]*.options*.encoding = "UTF-8"
+[compileJava, compileTestGroovy, compileTestJava]*.options*.compilerArgs = ["-Xlint:all,-options,-processing,-path"]
+tasks.named("compileTestJava").configure {
+    options.errorprone.enabled = false
+}
+
+// for Doma 2
+// Copy the resources referred by the Doma annotation processors to
+// the destinationDir of the compileJava task
+task copyDomaResources(type: Sync) {
+    from sourceSets.main.resources.srcDirs
+    into compileJava.destinationDir
+    include "doma.compile.config"
+    include "META-INF/**/*.sql"
+    include "META-INF/**/*.script"
+}
+compileJava.dependsOn copyDomaResources
+
+springBoot {
+    buildInfo()
+}
+
+idea {
+    module {
+        inheritOutputDirs = false
+        outputDir = file("$buildDir/classes/main/")
+    }
+}
+
+configurations {
+    developmentOnly
+    runtimeClasspath.extendsFrom developmentOnly
+    compileOnly.extendsFrom annotationProcessor
+
+    // annotationProcessor と testAnnotationProcessor、compileOnly と testCompileOnly を併記不要にする
+    testAnnotationProcessor.extendsFrom annotationProcessor
+    testImplementation.extendsFrom compileOnly
+
+    // for Doma 2
+    domaGenRuntime
+
+    // for SpotBugs
+    spotbugsStylesheets { transitive = false }
+}
+
+checkstyle {
+    configFile = file("${rootProject.projectDir}/config/checkstyle/google_checks.xml")
+    toolVersion = "8.29"
+    sourceSets = [project.sourceSets.main]
+}
+
+spotbugs {
+    toolVersion = "4.0.0-RC3"
+    ignoreFailures = true
+    effort = "max"
+    spotbugsTest.enabled = false
+}
+tasks.withType(com.github.spotbugs.SpotBugsTask) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+        html.stylesheet = resources.text.fromArchiveEntry(configurations.spotbugsStylesheets, "color.xsl")
+    }
+}
+
+pmd {
+    toolVersion = "6.21.0"
+    sourceSets = [project.sourceSets.main]
+    ignoreFailures = true
+    consoleOutput = true
+    ruleSetFiles = rootProject.files("/config/pmd/pmd-project-rulesets.xml")
+    ruleSets = []
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencyManagement {
+    imports {
+        // mavenBom は以下の URL のものを使用する
+        // https://repo.spring.io/release/org/springframework/boot/spring-boot-starter-parent/2.2.4.RELEASE/
+        // bomProperty に指定可能な property は以下の URL の BOM に記述がある
+        // https://repo.spring.io/release/org/springframework/boot/spring-boot-dependencies/2.2.4.RELEASE/spring-boot-dependencies-2.2.4.RELEASE.pom
+        mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES) {
+            // Spring Boot の BOM に定義されているバージョンから変更する場合には、ここに以下のように記述する
+            // bomProperty "thymeleaf.version", "3.0.9.RELEASE"
+        }
+        mavenBom("org.junit:junit-bom:5.6.0")
+    }
+}
+
+dependencies {
+    def jdbcDriver = "mysql:mysql-connector-java:8.0.19"
+    def spockVersion = "1.3-groovy-2.5"
+    def domaVersion = "2.27.1"
+    def lombokVersion = "1.18.12"
+    def errorproneVersion = "2.3.4"
+    def spotbugsVersion = "4.0.0-RC3"
+
+    // dependency-management-plugin によりバージョン番号が自動で設定されるもの
+    // Appendix F. Dependency versions ( https://docs.spring.io/spring-boot/docs/current/reference/html/appendix-dependency-versions.html ) 参照
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+    implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity5")
+//    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+//    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    compileOnly("org.springframework.boot:spring-boot-configuration-processor")
+//    implementation("org.springframework.session:spring-session-data-redis")
+    implementation("org.codehaus.janino:janino")
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+        exclude group: "org.junit.vintage", module: "junit-vintage-engine"
+    }
+    testImplementation("org.springframework.security:spring-security-test")
+
+    // dependency-management-plugin によりバージョン番号が自動で設定されないもの、あるいは最新バージョンを指定したいもの
+//    runtimeOnly("${jdbcDriver}")
+    implementation("com.integralblue:log4jdbc-spring-boot-starter:2.0.0")
+//    implementation("org.flywaydb:flyway-core:6.2.3")
+    testImplementation("org.assertj:assertj-core:3.15.0")
+    testImplementation("org.spockframework:spock-core:${spockVersion}")
+    testImplementation("org.spockframework:spock-spring:${spockVersion}")
+
+    // for lombok
+    // testAnnotationProcessor、testCompileOnly を併記しなくてよいよう configurations で設定している
+    annotationProcessor("org.projectlombok:lombok:${lombokVersion}")
+    compileOnly("org.projectlombok:lombok:${lombokVersion}")
+
+    // for Doma
+    annotationProcessor("org.seasar.doma:doma:${domaVersion}")
+    implementation("org.seasar.doma:doma:${domaVersion}")
+//    domaGenRuntime("org.seasar.doma:doma-gen:${domaVersion}")
+//    domaGenRuntime("${jdbcDriver}")
+
+    // for JUnit 5
+    // junit-jupiter で junit-jupiter-api, junit-jupiter-params, junit-jupiter-engine の３つが依存関係に追加される
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // for Error Prone ( http://errorprone.info/ )
+    errorprone("com.google.errorprone:error_prone_core:${errorproneVersion}")
+    compileOnly("com.google.errorprone:error_prone_annotations:${errorproneVersion}")
+
+    // for SpotBugs
+    compileOnly("com.github.spotbugs:spotbugs:${spotbugsVersion}")
+    compileOnly("net.jcip:jcip-annotations:1.0")
+    compileOnly("com.github.spotbugs:spotbugs-annotations:${spotbugsVersion}")
+    testImplementation("com.google.code.findbugs:jsr305:3.0.2")
+    spotbugsStylesheets("com.github.spotbugs:spotbugs:${spotbugsVersion}")
+    spotbugsPlugins("com.h3xstream.findsecbugs:findsecbugs-plugin:1.10.1")
+}
+
+def jvmArgsForTask = [
+        "-ea",
+        "-Dfile.encoding=UTF-8",
+        "-XX:TieredStopAtLevel=1",
+        "-Dspring.main.lazy-initialization=true"
+]
+// JDK 11 に変更後、test タスク実行時に groovy と powermock が JDKの内部部分にアクセスするためにコードでリフレクションを使用
+// していて WARNING が出るため、JVM の起動時オプションの --add-opens を指定して WARNING が出ないようにする
+def jvmArgsAddOpens = [
+        "--add-opens=java.base/java.io=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.ref=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+        "--add-opens=java.base/java.net=ALL-UNNAMED",
+        "--add-opens=java.base/java.security=ALL-UNNAMED",
+        "--add-opens=java.base/java.util=ALL-UNNAMED"
+]
+def printTestCount = { desc, result ->
+    if (!desc.parent) { // will match the outermost suite
+        println "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)"
+    }
+}
+
+// -ea -Dspring.profiles.active=develop -Dfile.encoding=UTF-8 -XX:TieredStopAtLevel=1 -Dspring.main.lazy-initialization=true
+// ※-XX:TieredStopAtLevel=1 オプションは 64bit VM でも起動時に最初はクライアントVM を使用するようにするもの
+//   開発環境でのみ使用し、本番環境では指定しないこと
+//   「Javaパフォーマンスチューニング基礎」参照
+//   https://www.slideshare.net/setoazusa/tuning-28987271
+bootRun {
+    jvmArgs = jvmArgsForTask +
+            ["-Dspring.profiles.active=develop"]
+}
+
+clean {
+    doLast {
+        rootProject.file("src/main/generated").deleteDir()
+        rootProject.file("src/test/generated_tests").deleteDir()
+    }
+}
+
+// -ea -Dspring.profiles.active=unittest -Dfile.encoding=UTF-8 -XX:TieredStopAtLevel=1 -Dspring.main.lazy-initialization=true --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.ref=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED
+task testJUnit4AndSpock(type: Test) {
+    jvmArgs = jvmArgsForTask +
+            jvmArgsAddOpens +
+            ["-Dspring.profiles.active=unittest"]
+
+    testLogging {
+        afterSuite printTestCount
+    }
+}
+test.dependsOn testJUnit4AndSpock
+test {
+    jvmArgs = jvmArgsForTask +
+            jvmArgsAddOpens +
+            ["-Dspring.profiles.active=unittest"]
+
+    // for JUnit 5
+    useJUnitPlatform()
+
+    testLogging {
+        afterSuite printTestCount
+    }
+}
+
+// for Doma-Gen
+task domaGen {
+    doLast {
+        // まず変更が必要なもの
+        def rootPackageName = "orezybsk.aws.sample.webapp"
+        def daoPackagePath = "src/main/java/orezybsk/aws/sample/webapp/dao"
+        def dbUrl = "jdbc:mysql://localhost:3306/sampledb"
+        def dbUser = ""
+        def dbPassword = ""
+        def tableNamePattern = ".*"
+        // おそらく変更不要なもの
+        def importOfComponentAndAutowiredDomaConfig = "${rootPackageName}.util.doma.ComponentAndAutowiredDomaConfig"
+        def workDirPath = "work"
+        def workDaoDirPath = "${workDirPath}/dao"
+
+        // 作業用ディレクトリを削除する
+        clearDir("${workDirPath}")
+
+        // 現在の Dao インターフェースのバックアップを取得する
+        copy() {
+            from "${daoPackagePath}"
+            into "${workDaoDirPath}/org"
+        }
+
+        // Dao インターフェース、Entity クラスを生成する
+        ant.taskdef(resource: "domagentask.properties",
+                classpath: configurations.domaGenRuntime.asPath)
+        ant.gen(url: "${dbUrl}", user: "${dbUser}", password: "${dbPassword}", tableNamePattern: "${tableNamePattern}") {
+            entityConfig(packageName: "${rootPackageName}.entity", useListener: false)
+            daoConfig(packageName: "${rootPackageName}.dao")
+            sqlConfig()
+        }
+
+        // 生成された Dao インターフェースを作業用ディレクトリにコピーし、
+        // @ComponentAndAutowiredDomaConfig アノテーションを付加する
+        copy() {
+            from "${daoPackagePath}"
+            into "${workDaoDirPath}/replace"
+            filter {
+                line ->
+                    line.replaceAll("import org.seasar.doma.Dao;", "import ${importOfComponentAndAutowiredDomaConfig};\nimport org.seasar.doma.Dao;")
+                            .replaceAll("@Dao", "@Dao\n@ComponentAndAutowiredDomaConfig")
+            }
+        }
+
+        // @ComponentAndAutowiredDomaConfig アノテーションを付加した Dao インターフェースを
+        // dao パッケージへ戻す
+        copy() {
+            from "${workDaoDirPath}/replace"
+            into "${daoPackagePath}"
+        }
+
+        // 元々 dao パッケージ内にあったファイルを元に戻す
+        copy() {
+            from "${workDaoDirPath}/org"
+            into "${daoPackagePath}"
+        }
+
+        // 作業用ディレクトリを削除する
+        delete "${workDirPath}"
+    }
+}

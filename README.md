@@ -10,6 +10,7 @@ AWS で EC2＋RDS＋ElastiCache 構成のサンプルを作成する
 * main.tf, asg-ec2.tf に VPC, IGW, Subnet, Route Table, VPC Endpoint, ALB, ASG+EC2 を定義する。
 * rds.tf に RDS(MySQL) を定義する。
 * elasticache.tf に ElastiCache(Redis) を定義する。
+* Spring Boot でサンプルアプリケーションを作成する。
 
 ## 残件
 

@@ -8,3 +8,10 @@
  */
 
 rootProject.name = 'aws-springboot-sample'
+rootDir.eachFileRecurse { f ->
+    if ( f.name == "build.gradle" ) {
+        String relativePath = f.parentFile.absolutePath - rootDir.absolutePath
+        String projectName = relativePath.replaceAll("[\\\\\\/]", ":")
+        include projectName
+    }
+}
