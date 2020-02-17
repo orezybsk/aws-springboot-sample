@@ -52,7 +52,7 @@ public class WebSecurityConfig {
             http.formLogin()
                     .loginPage("/")
                     .loginProcessingUrl("/login")
-                    .defaultSuccessUrl("/sample")
+                    .defaultSuccessUrl("/top")
                     .usernameParameter("email")
                     .passwordParameter("password")
                     .permitAll()

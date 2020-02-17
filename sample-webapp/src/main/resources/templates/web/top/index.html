@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+    <title>トップ画面</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="/vendor/font-awesome/css/font-awesome.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="/vendor/admin-lte/css/adminlte.min.css">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+</head>
+<body>
+<div class="wrapper">
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper" style="margin-left: 0px;">
+        <!-- Main content -->
+        <div class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-sm-12">
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title">Responsive Hover Table</h3>
+
+                                        <div class="card-tools float-right">
+                                            <a href="/logout">Logout</a>
+                                        </div>
+                                    </div>
+                                    <!-- /.card-header -->
+                                    <!--/*@thymesVar id="topForm" type="orezybsk.aws.sample.webapp.web.top.TopForm"*/-->
+                                    <div class="card-body table-responsive p-0"
+                                         th:object="${topForm}">
+                                        <table class="table table-hover text-nowrap">
+                                            <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>名前</th>
+                                                <th>年齢</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="sampleData : *{sampleDataList}">
+                                                <td th:text="${sampleData.id}">999</td>
+                                                <td th:text="${sampleData.name}">テスト　たろう</td>
+                                                <td th:text="${sampleData.age}">20</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <!-- /.card-body -->
+                                </div>
+                                <!-- /.card -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /.content -->
+    </div>
+    <!-- /.content-wrapper -->
+</div>
+<!-- ./wrapper -->
+
+<!-- REQUIRED SCRIPTS -->
+
+<!-- jQuery -->
+<script src="/vendor/jquery/jquery.min.js"></script>
+<!-- Bootstrap 4 -->
+<script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- AdminLTE App -->
+<script src="/vendor/admin-lte/js/adminlte.min.js"></script>
+</body>
+</html>

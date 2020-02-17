@@ -255,7 +255,7 @@ task domaGen {
         // まず変更が必要なもの
         def rootPackageName = "orezybsk.aws.sample.webapp"
         def daoPackagePath = "src/main/java/orezybsk/aws/sample/webapp/dao"
-        def dbUrl = "jdbc:mysql://localhost/sampledb"
+        def dbUrl = "jdbc:mysql://localhost/sampledb??sslMode=DISABLED&characterEncoding=utf8"
         def dbUser = "sampledb_user"
         def dbPassword = "xxxxxxxx"
         def driverClassName = "org.mariadb.jdbc.Driver"
