@@ -4,14 +4,21 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.jmx.export.MBeanExporter;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect;
 
 import javax.sql.DataSource;
+import java.time.Duration;
+
+import static java.util.Collections.singletonMap;
+import static org.springframework.data.redis.cache.RedisCacheConfiguration.defaultCacheConfig;
 
 /**
  * アプリケーション用 Configuration クラス
@@ -65,6 +72,25 @@ public class ApplicationConfig {
         }
         return DataSourceBuilder.create()
                 .type(HikariDataSource.class)
+                .build();
+    }
+
+    /**
+     * Spring Cache 用 RedisCacheManager
+     * https://docs.spring.io/spring-data/data-redis/docs/current/reference/html/#redis:support:cache-abstraction
+     *
+     * @param connectionFactory {@link RedisConnectionFactory} bean
+     * @return {@link CacheManager} object
+     */
+    @Bean
+    public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
+        return RedisCacheManager.builder(connectionFactory)
+                .cacheDefaults(defaultCacheConfig())
+                .withInitialCacheConfigurations(singletonMap("dbCache"
+                        , defaultCacheConfig()
+                                .entryTtl(Duration.ofMinutes(5))
+                                .disableCachingNullValues()))
+                .transactionAware()
                 .build();
     }
 

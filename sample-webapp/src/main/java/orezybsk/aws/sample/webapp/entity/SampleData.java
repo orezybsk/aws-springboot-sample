@@ -7,12 +7,16 @@ import org.seasar.doma.GenerationType;
 import org.seasar.doma.Id;
 import org.seasar.doma.Table;
 
+import java.io.Serializable;
+
 /**
  * 
  */
 @Entity
 @Table(name = "sample_data")
-public class SampleData {
+public class SampleData implements Serializable {
+
+    private static final long serialVersionUID = 617181738149089885L;
 
     /**  */
     @Id

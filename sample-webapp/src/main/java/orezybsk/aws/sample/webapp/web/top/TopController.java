@@ -11,15 +11,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/top")
 public class TopController {
 
-    private final TopService topService;
+    private final TopFacade topFacade;
 
     /**
      * コンストラクタ
      *
-     * @param topService {@link TopService} bean
+     * @param topFacade {@link TopFacade} bean
      */
-    public TopController(TopService topService) {
-        this.topService = topService;
+    public TopController(TopFacade topFacade) {
+        this.topFacade = topFacade;
     }
 
     /**
@@ -30,7 +30,7 @@ public class TopController {
      */
     @GetMapping
     public String index(TopForm topForm) {
-        topService.selectSampleData(topForm);
+        topFacade.selectSampleData(topForm);
         return "web/top/index";
     }
 
