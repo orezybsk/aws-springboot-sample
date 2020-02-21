@@ -10,6 +10,7 @@ import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.session.data.redis.config.ConfigureRedisAction;
 
 import java.time.Duration;
 import java.util.List;
@@ -48,6 +49,18 @@ public class RedisClusterConfig {
         RedisClusterConfiguration serverConfig = new RedisClusterConfiguration(nodes);
 
         return new LettuceConnectionFactory(serverConfig, clientConfig);
+    }
+
+    /**
+     * AWS の ElastiCache で Spring Session を使用する時は CONFIG を実行しないようにする
+     * RR unknown command 'CONFIG' when using Secured Redis
+     * https://github.com/spring-projects/spring-session/issues/124
+     *
+     * @return
+     */
+    @Bean
+    public ConfigureRedisAction configureRedisAction() {
+        return ConfigureRedisAction.NO_OP;
     }
 
 }

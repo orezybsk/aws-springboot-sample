@@ -26,6 +26,20 @@ resource "aws_security_group" "sg_redis" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+resource "aws_elasticache_parameter_group" "this" {
+  name   = "${var.project_name}-redis-parameter-group"
+  family = "redis5.0"
+
+  parameter {
+    name  = "cluster-enabled"
+    value = "yes"
+  }
+
+  parameter {
+    name  = "notify-keyspace-events"
+    value = "Egx"
+  }
+}
 resource "aws_elasticache_subnet_group" "this" {
   count = var.create_elasticache ? 1 : 0
 
@@ -41,8 +55,11 @@ resource "aws_elasticache_replication_group" "example" {
   // https://docs.aws.amazon.com/ja_jp/AmazonElastiCache/latest/red-ug/ParameterGroups.Redis.html#ParameterGroups.Redis.NodeSpecific
   node_type = "cache.m3.medium"
   port      = var.redis_port
-  // default を使うべきか aws_elasticache_parameter_group で独自定義すべきか、よく分からない。。。
-  parameter_group_name       = "default.redis5.0.cluster.on"
+  // Spring Session を使用する時は default ではなく自分で aws_elasticache_parameter_group を定義する
+  // Spring Session - 9.7.5. SessionDeletedEvent and SessionExpiredEvent
+  // https://docs.spring.io/spring-session/docs/current/reference/html5/#api-redisindexedsessionrepository-sessiondestroyedevent
+  // parameter_group_name = "default.redis5.0.cluster.on"
+  parameter_group_name       = aws_elasticache_parameter_group.this.name
   automatic_failover_enabled = true
   subnet_group_name          = aws_elasticache_subnet_group.this[count.index].name
   snapshot_window            = "17:10-18:10"
