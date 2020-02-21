@@ -30,15 +30,19 @@ data "aws_iam_policy_document" "ec2_for_ssm" {
     }
   }
 }
-data "aws_iam_policy" "ec2_for_ssm" {
-  arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
 resource "aws_iam_role" "ec2_for_ssm" {
   name               = "${var.project_name}-ec2-for-ssm"
   assume_role_policy = data.aws_iam_policy_document.ec2_for_ssm.json
 }
+data "aws_iam_policy" "ec2_for_ssm" {
+  arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
 resource "aws_iam_role_policy_attachment" "ec2_for_ssm" {
   policy_arn = data.aws_iam_policy.ec2_for_ssm.arn
+  role       = aws_iam_role.ec2_for_ssm.name
+}
+resource "aws_iam_role_policy_attachment" "deploy_files" {
+  policy_arn = aws_iam_policy.deploy_files.arn
   role       = aws_iam_role.ec2_for_ssm.name
 }
 resource "aws_iam_instance_profile" "ec2_for_ssm" {
@@ -124,22 +128,6 @@ resource "aws_alb" "alb" {
     aws_security_group.sg_alb.id
   ]
 }
-resource "aws_alb_target_group" "alb_http" {
-  name     = "${var.project_name}-alb-http"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.vpc.id
-
-  health_check {
-    path                = "/"
-    protocol            = "HTTP"
-    matcher             = 200
-    interval            = 15
-    timeout             = 3
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-}
 resource "aws_alb_listener" "alb_http" {
   load_balancer_arn = aws_alb.alb.arn
   port              = 80
@@ -150,6 +138,24 @@ resource "aws_alb_listener" "alb_http" {
       message_body = "Not Found"
       status_code  = 404
     }
+  }
+}
+resource "aws_alb_target_group" "alb_http" {
+  name     = "${var.project_name}-alb-http"
+  port     = var.server_port
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.vpc.id
+
+  health_check {
+    path                = "/"
+    protocol            = "HTTP"
+    port                = var.server_port
+    matcher             = 200
+//    interval            = 30
+    interval            = 300
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
   }
 }
 resource "aws_lb_listener_rule" "alb_http" {
@@ -173,9 +179,9 @@ resource "aws_security_group" "sg_asg" {
   vpc_id = aws_vpc.vpc.id
 
   ingress {
-    from_port       = 80
+    from_port       = var.server_port
     protocol        = "tcp"
-    to_port         = 80
+    to_port         = var.server_port
     security_groups = [aws_security_group.sg_alb.arn]
   }
 
@@ -187,7 +193,7 @@ resource "aws_security_group" "sg_asg" {
   }
 }
 resource "aws_launch_configuration" "asg" {
-  name                        = "${var.project_name}-asg-launch-configuration"
+  name_prefix                 = "${var.project_name}-asg-launch-configuration"
   image_id                    = data.aws_ami.recent_amazon_linux_2.image_id
   instance_type               = "t3.micro"
   security_groups             = [aws_security_group.sg_asg.id]
@@ -205,11 +211,23 @@ resource "aws_launch_configuration" "asg" {
     delete_on_termination = true
   }
 
+  //user_data = <<EOF
+  //  #!/bin/bash
+  //  amazon-linux-extras install nginx1
+  //  systemctl start nginx
+  //  systemctl enable nginx
+  //EOF
+
+  // Amazon Linux 2 における Amazon Corretto 11 のインストール手順
+  // https://docs.aws.amazon.com/ja_jp/corretto/latest/corretto-11-ug/amazon-linux-install.html
   user_data = <<EOF
     #!/bin/bash
-    amazon-linux-extras install nginx1
-    systemctl start nginx
-    systemctl enable nginx
+    yum install java-11-amazon-corretto -y
+    cd /opt
+    mkdir sample-webapp
+    cd sample-webapp
+    aws s3 cp s3://${var.deploy_files_bucket_name}/sample-webapp-2.2.4-RELEASE.jar .
+    nohup java -Djava.net.preferIPv4Stack=true -Dspring.profiles.active=product -jar sample-webapp-2.2.4-RELEASE.jar
   EOF
 
   lifecycle {
@@ -227,9 +245,9 @@ resource "aws_autoscaling_group" "asg" {
   force_delete              = true
 
   // https://www.terraform.io/docs/providers/aws/r/autoscaling_group.html#waiting-for-capacity 参照
-  desired_capacity = 2
+  desired_capacity = 1
   max_size         = 4
-  min_size         = 2
+  min_size         = 1
 
   // たぶんこれを入れると EC2 Instance 起動・停止時に SNS で通知できるはず
   // https://underthehood.meltwater.com/blog/2020/02/07/dynamic-route53-records-for-aws-auto-scaling-groups-with-terraform/
@@ -287,7 +305,7 @@ resource "aws_cloudwatch_metric_alarm" "asg_scale_up_alarm" {
     AutoScalingGroupName = aws_autoscaling_group.asg.name
   }
 
-  alarm_description = "${var.project_name}-asg-alarm"
+  alarm_description = "${var.project_name}-asg-scale-up-alarm"
   alarm_actions     = [aws_autoscaling_policy.asg_scaling_policy_scale_up.arn]
 }
 resource "aws_cloudwatch_metric_alarm" "asg_scale_down_alarm" {
@@ -304,6 +322,6 @@ resource "aws_cloudwatch_metric_alarm" "asg_scale_down_alarm" {
     AutoScalingGroupName = aws_autoscaling_group.asg.name
   }
 
-  alarm_description = "${var.project_name}-asg-alarm"
+  alarm_description = "${var.project_name}-asg-scale-down-alarm"
   alarm_actions     = [aws_autoscaling_policy.asg_scaling_policy_scale_down.arn]
 }
