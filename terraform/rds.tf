@@ -149,3 +149,6 @@ resource "aws_db_instance" "this" {
 // sudo yum install mysql-community-client -y
 // mysql -h <RDSのEndpoint> -u <username> -p
 // mysql> show global variables like 'character%';
+
+// Running Setup SQL scripts on an RDS instance within a VPC, via Terraform
+// https://gist.github.com/pat/7b61376981b40cfdbb1166734b8d184f
