@@ -37,3 +37,6 @@ resource "aws_cloudformation_stack" "cf_stack_sns_email" {
 output "sns_email_arn" {
   value = aws_cloudformation_stack.cf_stack_sns_email.outputs.ARN
 }
+
+// AWS Chatbot を使って AWS Personal Health Dashboardの通知をいい感じにSlackに通知する
+// https://engineer.crowdworks.jp/entry/2019/09/17/125955
