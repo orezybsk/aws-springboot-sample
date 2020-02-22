@@ -141,6 +141,31 @@ resource "aws_db_instance" "this" {
     )
   }
 }
+// Resource: aws_db_event_subscription
+// https://www.terraform.io/docs/providers/aws/r/db_event_subscription.html
+resource "aws_db_event_subscription" "this" {
+  count = var.create_rds ? 1 : 0
+
+  name      = "${var.project_name}-db-event"
+  sns_topic = data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn
+
+  source_type = "db-instance"
+  source_ids  = [aws_db_instance.this[count.index].id]
+
+  // Using Amazon RDS Event Notification
+  // https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_Events.html
+  event_categories = [
+    "availability",
+    "deletion",
+    "failover",
+    "failure",
+    "low storage",
+    "maintenance",
+    "read replica",
+    "recovery",
+    "restoration",
+  ]
+}
 
 // インストール後 Public Subnet 内の EC2 Instance で以下のコマンドを実行して動作確認する
 // sudo yum localinstall https://dev.mysql.com/get/mysql80-community-release-el7-1.noarch.rpm -y
@@ -152,6 +177,3 @@ resource "aws_db_instance" "this" {
 
 // Running Setup SQL scripts on an RDS instance within a VPC, via Terraform
 // https://gist.github.com/pat/7b61376981b40cfdbb1166734b8d184f
-
-// Resource: aws_db_event_subscription
-// https://www.terraform.io/docs/providers/aws/r/db_event_subscription.html
