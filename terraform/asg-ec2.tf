@@ -151,8 +151,7 @@ resource "aws_alb_target_group" "alb_http" {
     protocol            = "HTTP"
     port                = var.server_port
     matcher             = 200
-//    interval            = 30
-    interval            = 300
+    interval            = 30
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 2
@@ -251,23 +250,23 @@ resource "aws_autoscaling_group" "asg" {
 
   // たぶんこれを入れると EC2 Instance 起動・停止時に SNS で通知できるはず
   // https://underthehood.meltwater.com/blog/2020/02/07/dynamic-route53-records-for-aws-auto-scaling-groups-with-terraform/
-  //  initial_lifecycle_hook {
-  //    name                    = "lifecycle-launching"
-  //    default_result          = "CONTINUE"
-  //    heartbeat_timeout       = 60
-  //    lifecycle_transition    = "autoscaling:EC2_INSTANCE_LAUNCHING"
-  //    notification_target_arn = module.autoscale_dns.autoscale_handling_sns_topic_arn
-  //    role_arn                = module.autoscale_dns.agent_lifecycle_iam_role_arn
-  //  }
-  //
-  //  initial_lifecycle_hook {
-  //    name                    = "lifecycle-terminating"
-  //    default_result          = "CONTINUE"
-  //    heartbeat_timeout       = 60
-  //    lifecycle_transition    = "autoscaling:EC2_INSTANCE_TERMINATING"
-  //    notification_target_arn = module.autoscale_dns.autoscale_handling_sns_topic_arn
-  //    role_arn                = module.autoscale_dns.agent_lifecycle_iam_role_arn
-  //  }
+  initial_lifecycle_hook {
+    name                    = "lifecycle-launching"
+    default_result          = "CONTINUE"
+    heartbeat_timeout       = 60
+    lifecycle_transition    = "autoscaling:EC2_INSTANCE_LAUNCHING"
+    notification_target_arn = data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn
+    role_arn                = aws_iam_role.sns_email.arn
+  }
+
+  initial_lifecycle_hook {
+    name                    = "lifecycle-terminating"
+    default_result          = "CONTINUE"
+    heartbeat_timeout       = 60
+    lifecycle_transition    = "autoscaling:EC2_INSTANCE_TERMINATING"
+    notification_target_arn = data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn
+    role_arn                = aws_iam_role.sns_email.arn
+  }
 
   tag {
     key                 = "Name"

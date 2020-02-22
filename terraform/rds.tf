@@ -152,3 +152,6 @@ resource "aws_db_instance" "this" {
 
 // Running Setup SQL scripts on an RDS instance within a VPC, via Terraform
 // https://gist.github.com/pat/7b61376981b40cfdbb1166734b8d184f
+
+// Resource: aws_db_event_subscription
+// https://www.terraform.io/docs/providers/aws/r/db_event_subscription.html
