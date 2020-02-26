@@ -53,7 +53,8 @@ resource "aws_elasticache_replication_group" "example" {
   replication_group_description = "${var.project_name} replication group"
   // Redis のノードタイプ固有のパラメータ
   // https://docs.aws.amazon.com/ja_jp/AmazonElastiCache/latest/red-ug/ParameterGroups.Redis.html#ParameterGroups.Redis.NodeSpecific
-  node_type = "cache.m3.medium"
+  // node_type = "cache.m3.medium"
+  node_type = "cache.t3.small"
   port      = var.redis_port
   // Spring Session を使用する時は default ではなく自分で aws_elasticache_parameter_group を定義する
   // Spring Session - 9.7.5. SessionDeletedEvent and SessionExpiredEvent
