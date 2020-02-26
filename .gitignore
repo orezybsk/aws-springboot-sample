@@ -51,3 +51,8 @@ docker/mysql/data
 # Ignore node.js, npm
 node_modules/
 sample-webapp/src/main/resources/static/vendor/
+
+# Lambda
+terraform/lambda/**/*.zip
+terraform/lambda/rds_created/pymysql
+terraform/lambda/rds_created/PyMySQL-0.9.3.dist-info

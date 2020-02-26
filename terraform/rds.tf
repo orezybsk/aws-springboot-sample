@@ -107,8 +107,8 @@ resource "aws_db_instance" "this" {
   storage_type          = "gp2"
   storage_encrypted     = true
   kms_key_id            = aws_kms_key.this.arn
-  username              = var.db_username
-  password              = var.db_password_tmp
+  username              = var.db_master_username
+  password              = var.db_master_password_tmp
   multi_az              = true
   publicly_accessible   = false
   backup_window         = "17:10-17:40"
@@ -137,7 +137,7 @@ resource "aws_db_instance" "this" {
   provisioner "local-exec" {
     command = format("echo 'modify_db_password_command: aws-vault exec $AWS_PROFILE -- bash -c \"aws rds modify-db-instance --apply-immediately --db-instance-identifier %s --master-user-password '%s'\"'",
       aws_db_instance.this[count.index].identifier,
-      var.db_password
+      var.db_master_password
     )
   }
 }
@@ -165,6 +165,103 @@ resource "aws_db_event_subscription" "this" {
     "recovery",
     "restoration",
   ]
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Lambda (rds_creattion)
+// RDSの生成完了直後に呼び出される
+//
+data "aws_iam_policy_document" "assume_role_lambda" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole"
+    ]
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+resource "aws_iam_role" "rds_created" {
+  count = var.create_rds ? 1 : 0
+
+  name               = "${var.project_name}-rds-created"
+  assume_role_policy = data.aws_iam_policy_document.assume_role_lambda.json
+}
+resource "aws_cloudwatch_log_group" "rds_created_log" {
+  count = var.create_rds ? 1 : 0
+
+  name              = "/aws/lambda/rds_created"
+  retention_in_days = 3
+}
+data "aws_iam_policy_document" "rds_created" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      # 下の３つは AWSLambdaVPCAccessExecutionRole Policy より抜粋
+      # VPC内で Lambda を実行する時に必要
+      "ec2:CreateNetworkInterface",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DeleteNetworkInterface"
+    ]
+    resources = ["*"]
+  }
+}
+resource "aws_iam_role_policy" "rds_created" {
+  count = var.create_rds ? 1 : 0
+
+  name   = "${var.project_name}-rds_created"
+  role   = aws_iam_role.rds_created[count.index].id
+  policy = data.aws_iam_policy_document.rds_created.json
+}
+data "archive_file" "rds_created_zip" {
+  type        = "zip"
+  output_path = "${path.module}/lambda/rds_created.zip"
+  source_dir  = "${path.module}/lambda/rds_created/"
+}
+resource "aws_lambda_function" "rds_created" {
+  count = var.create_rds ? 1 : 0
+
+  depends_on = [aws_cloudwatch_log_group.rds_created_log, aws_iam_role_policy.rds_created, "aws_db_instance.this[0]"]
+
+  function_name    = "rds_created"
+  handler          = "main.lambda_handler"
+  filename         = "lambda/rds_created.zip"
+  source_code_hash = filebase64sha256("lambda/rds_created.zip")
+
+  role    = aws_iam_role.rds_created[count.index].arn
+  runtime = "python3.8"
+  timeout = 15
+
+  vpc_config {
+    security_group_ids = [aws_security_group.sg_asg.id]
+    subnet_ids         = [aws_subnet.private_0.id, aws_subnet.private_1.id]
+  }
+
+  // https://docs.aws.amazon.com/cli/latest/reference/lambda/invoke.html
+  // lambda-exec
+  // https://registry.terraform.io/modules/connect-group/lambda-exec/aws/1.0.2
+  provisioner "local-exec" {
+    command = format("aws lambda invoke --function-name %s --payload '%s' response.json",
+      aws_lambda_function.rds_created[count.index].function_name,
+      jsonencode(merge(map(
+        // RDS exported attribute 'endpoint' should not include port number
+        // https://github.com/hashicorp/terraform/issues/4996
+        "RDS_ENDPOINT", element(split(":", aws_db_instance.this[count.index].endpoint), 0),
+        "DB_MASTER_USERNAME", var.db_master_username,
+        "DB_MASTER_PASSWORD", var.db_master_password_tmp,
+        "DB_NAME", var.db_name,
+        "DB_USERNAME", var.db_username,
+        "DB_PASSWORD", var.db_password
+      )))
+    )
+    // Git for Windows の bash.exe を使用して aws lambda invoke コマンドを実行する
+    interpreter = ["bash.exe", "-c"]
+  }
 }
 
 // インストール後 Public Subnet 内の EC2 Instance で以下のコマンドを実行して動作確認する
