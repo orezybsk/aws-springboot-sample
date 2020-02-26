@@ -1,7 +1,7 @@
 # Python, pipでrequirements.txtを使ってパッケージ一括インストール
 # https://note.nkmk.me/python-pip-install-requirements/
 #
-# cd terraform/lambda/rds_created
+# cd terraform/lambda/rds_create_db
 # pip install -r requirements.txt -t .
 #
 ###### Requirements without Version Specifiers ######

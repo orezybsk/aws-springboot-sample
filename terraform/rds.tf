@@ -183,19 +183,19 @@ data "aws_iam_policy_document" "assume_role_lambda" {
     }
   }
 }
-resource "aws_iam_role" "rds_created" {
+resource "aws_iam_role" "rds_create_db" {
   count = var.create_rds ? 1 : 0
 
-  name               = "${var.project_name}-rds-created"
+  name               = "${var.project_name}-rdsCreateDb"
   assume_role_policy = data.aws_iam_policy_document.assume_role_lambda.json
 }
-resource "aws_cloudwatch_log_group" "rds_created_log" {
+resource "aws_cloudwatch_log_group" "rds_create_db_log" {
   count = var.create_rds ? 1 : 0
 
-  name              = "/aws/lambda/rds_created"
+  name              = "/aws/lambda/rdsCreateDb"
   retention_in_days = 3
 }
-data "aws_iam_policy_document" "rds_created" {
+data "aws_iam_policy_document" "rds_create_db" {
   statement {
     effect = "Allow"
     actions = [
@@ -211,29 +211,29 @@ data "aws_iam_policy_document" "rds_created" {
     resources = ["*"]
   }
 }
-resource "aws_iam_role_policy" "rds_created" {
+resource "aws_iam_role_policy" "rds_create_db" {
   count = var.create_rds ? 1 : 0
 
-  name   = "${var.project_name}-rds_created"
-  role   = aws_iam_role.rds_created[count.index].id
-  policy = data.aws_iam_policy_document.rds_created.json
+  name   = "${var.project_name}-rdsCreateDb"
+  role   = aws_iam_role.rds_create_db[count.index].id
+  policy = data.aws_iam_policy_document.rds_create_db.json
 }
-data "archive_file" "rds_created_zip" {
+data "archive_file" "rds_create_db_zip" {
   type        = "zip"
-  output_path = "${path.module}/lambda/rds_created.zip"
-  source_dir  = "${path.module}/lambda/rds_created/"
+  output_path = "${path.module}/lambda/rdsCreateDb.zip"
+  source_dir  = "${path.module}/lambda/rdsCreateDb/"
 }
-resource "aws_lambda_function" "rds_created" {
+resource "aws_lambda_function" "rds_create_db" {
   count = var.create_rds ? 1 : 0
 
-  depends_on = [aws_cloudwatch_log_group.rds_created_log, aws_iam_role_policy.rds_created, "aws_db_instance.this[0]"]
+  depends_on = [aws_cloudwatch_log_group.rds_create_db_log, aws_iam_role_policy.rds_create_db, "aws_db_instance.this[0]"]
 
-  function_name    = "rds_created"
+  function_name    = "${var.project_name}-rdsCreateDb"
   handler          = "main.lambda_handler"
-  filename         = "lambda/rds_created.zip"
-  source_code_hash = filebase64sha256("lambda/rds_created.zip")
+  filename         = data.archive_file.rds_create_db_zip.output_path
+  source_code_hash = filebase64sha256(data.archive_file.rds_create_db_zip.output_path)
 
-  role    = aws_iam_role.rds_created[count.index].arn
+  role    = aws_iam_role.rds_create_db[count.index].arn
   runtime = "python3.8"
   timeout = 15
 
@@ -247,7 +247,7 @@ resource "aws_lambda_function" "rds_created" {
   // https://registry.terraform.io/modules/connect-group/lambda-exec/aws/1.0.2
   provisioner "local-exec" {
     command = format("aws lambda invoke --function-name %s --payload '%s' response.json",
-      aws_lambda_function.rds_created[count.index].function_name,
+      aws_lambda_function.rds_create_db[count.index].function_name,
       jsonencode(merge(map(
         // RDS exported attribute 'endpoint' should not include port number
         // https://github.com/hashicorp/terraform/issues/4996
