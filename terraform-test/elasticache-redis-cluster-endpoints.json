@@ -1,0 +1,64 @@
+{
+    "ReplicationGroups": [
+        {
+            "ReplicationGroupId": "aws-springboot-sample-rep-group",
+            "Description": "aws-springboot-sample replication group",
+            "Status": "available",
+            "PendingModifiedValues": {},
+            "MemberClusters": [
+                "aws-springboot-sample-rep-group-0001-001",
+                "aws-springboot-sample-rep-group-0001-002",
+                "aws-springboot-sample-rep-group-0002-001",
+                "aws-springboot-sample-rep-group-0002-002"
+            ],
+            "NodeGroups": [
+                {
+                    "NodeGroupId": "0001",
+                    "Status": "available",
+                    "Slots": "0-8191",
+                    "NodeGroupMembers": [
+                        {
+                            "CacheClusterId": "aws-springboot-sample-rep-group-0001-001",
+                            "CacheNodeId": "0001",
+                            "PreferredAvailabilityZone": "ap-northeast-1b"
+                        },
+                        {
+                            "CacheClusterId": "aws-springboot-sample-rep-group-0001-002",
+                            "CacheNodeId": "0001",
+                            "PreferredAvailabilityZone": "ap-northeast-1c"
+                        }
+                    ]
+                },
+                {
+                    "NodeGroupId": "0002",
+                    "Status": "available",
+                    "Slots": "8192-16383",
+                    "NodeGroupMembers": [
+                        {
+                            "CacheClusterId": "aws-springboot-sample-rep-group-0002-001",
+                            "CacheNodeId": "0001",
+                            "PreferredAvailabilityZone": "ap-northeast-1c"
+                        },
+                        {
+                            "CacheClusterId": "aws-springboot-sample-rep-group-0002-002",
+                            "CacheNodeId": "0001",
+                            "PreferredAvailabilityZone": "ap-northeast-1b"
+                        }
+                    ]
+                }
+            ],
+            "AutomaticFailover": "enabled",
+            "ConfigurationEndpoint": {
+                "Address": "aws-springboot-sample-rep-group.lge5rw.clustercfg.apne1.cache.amazonaws.com",
+                "Port": 6379
+            },
+            "SnapshotRetentionLimit": 7,
+            "SnapshotWindow": "17:10-18:10",
+            "ClusterEnabled": true,
+            "CacheNodeType": "cache.t3.small",
+            "AuthTokenEnabled": false,
+            "TransitEncryptionEnabled": false,
+            "AtRestEncryptionEnabled": false
+        }
+    ]
+}
