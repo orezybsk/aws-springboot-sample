@@ -78,3 +78,50 @@ resource "aws_elasticache_replication_group" "this" {
 // インストール後 Public Subnet 内の EC2 Instance で以下のコマンドを実行して動作確認する
 // sudo amazon-linux-extras install redis4.0 -y
 // redis-cli -h <endpoint> -p 6379 -c
+
+///////////////////////////////////////////////////////////////////////////////
+// CloudWatch
+//
+// azavea / terraform-aws-redis-elasticache
+// https://github.com/azavea/terraform-aws-redis-elasticache/blob/develop/main.tf
+resource "aws_cloudwatch_metric_alarm" "redis_cpu" {
+  count = var.create_elasticache ? (var.redis_replicas_per_node_group + 1) * var.redis_num_node_groups : 0
+
+  alarm_name          = format("alarm-ElastiCache-CPUUtilization(%s)", sort(aws_elasticache_replication_group.this[0].member_clusters)[count.index])
+  alarm_description   = "Redis Cluster CPU utilization"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ElastiCache"
+  period              = 300
+  statistic           = "Average"
+
+  threshold = 70
+
+  dimensions = {
+    CacheClusterId = sort(aws_elasticache_replication_group.this[0].member_clusters)[count.index]
+  }
+
+  alarm_actions = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "redis_freememory" {
+  count = var.create_elasticache ? (var.redis_replicas_per_node_group + 1) * var.redis_num_node_groups : 0
+
+  alarm_name          = format("alarm-ElastiCache-FreeableMemory(%s)", sort(aws_elasticache_replication_group.this[0].member_clusters)[count.index])
+  alarm_description   = "Redis Cluster freeable memory"
+  comparison_operator = "LessThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "FreeableMemory"
+  namespace           = "AWS/ElastiCache"
+  period              = 300
+  statistic           = "Average"
+
+  threshold = 294205259
+
+  dimensions = {
+    CacheClusterId = sort(aws_elasticache_replication_group.this[0].member_clusters)[count.index]
+  }
+
+  alarm_actions = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+}
