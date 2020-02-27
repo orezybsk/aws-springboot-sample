@@ -46,7 +46,7 @@ resource "aws_elasticache_subnet_group" "this" {
   name       = "${var.project_name}-redis-subnet-group"
   subnet_ids = [aws_subnet.private_0.id, aws_subnet.private_1.id]
 }
-resource "aws_elasticache_replication_group" "example" {
+resource "aws_elasticache_replication_group" "this" {
   count = var.create_elasticache ? 1 : 0
 
   replication_group_id          = "${var.project_name}-rep-group"
