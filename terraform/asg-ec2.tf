@@ -41,6 +41,21 @@ resource "aws_iam_role_policy_attachment" "ec2_for_ssm" {
   policy_arn = data.aws_iam_policy.ec2_for_ssm.arn
   role       = aws_iam_role.ec2_for_ssm.name
 }
+data "aws_iam_policy_document" "ssm_get_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "ssm:Get*",
+      "kms:Decrypt"
+    ]
+    resources = ["*"]
+  }
+}
+resource "aws_iam_role_policy" "ssm_get_policy" {
+  name   = "${var.project_name}-ssm-get-policy"
+  role   = aws_iam_role.ec2_for_ssm.id
+  policy = data.aws_iam_policy_document.ssm_get_policy.json
+}
 resource "aws_iam_role_policy_attachment" "deploy_files" {
   policy_arn = aws_iam_policy.deploy_files.arn
   role       = aws_iam_role.ec2_for_ssm.name
@@ -192,6 +207,8 @@ resource "aws_security_group" "sg_asg" {
   }
 }
 resource "aws_launch_configuration" "asg" {
+  depends_on = [aws_ssm_parameter.SPRING_DATASOURCE_HIKARI_JDBC_URL, aws_ssm_parameter.SPRING_REDIS_CLUSTER_NODES]
+
   name_prefix                 = "${var.project_name}-asg-launch-configuration"
   image_id                    = data.aws_ami.recent_amazon_linux_2.image_id
   instance_type               = "t3.micro"
@@ -207,6 +224,7 @@ resource "aws_launch_configuration" "asg" {
   root_block_device {
     volume_type           = "gp2"
     volume_size           = 20
+    encrypted             = true
     delete_on_termination = true
   }
 
@@ -219,8 +237,21 @@ resource "aws_launch_configuration" "asg" {
 
   // Amazon Linux 2 における Amazon Corretto 11 のインストール手順
   // https://docs.aws.amazon.com/ja_jp/corretto/latest/corretto-11-ug/amazon-linux-install.html
+  // パラメータストアからEC2に環境変数を設定する
+  // https://qiita.com/th_/items/8ffb28dd6d27779a6c9d
+  //
+  // user_data の実行結果は /var/log/cloud-init-output.log に出力される
+  //
   user_data = <<EOF
     #!/bin/bash
+    yum install jq -y
+    SSM_PARAMETERS=$(aws --region ap-northeast-1 ssm get-parameters-by-path --path "/springbootSample/product" --with-decryption)
+    echo $SSM_PARAMETERS
+    for param in $(echo $SSM_PARAMETERS | jq -r '.Parameters[] | .Name + "=" + .Value | gsub("/springbootSample/product/"; "")'); do
+        echo $param
+        export $param
+    done
+
     yum install java-11-amazon-corretto -y
     cd /opt
     mkdir sample-webapp

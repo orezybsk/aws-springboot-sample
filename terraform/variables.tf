@@ -4,6 +4,10 @@ variable "project_name" {
   description = "プロジェクト名"
   type        = string
 }
+variable "profile" {
+  description = "環境 develop|stating|product のいずれかを指定する"
+  type        = string
+}
 variable "key_name" {
   description = "aws_launch_configuration resource の key_name に指定するキーペア、EC2 インスタンスを生成する時に使用される"
   type        = string
@@ -34,16 +38,6 @@ variable "redis_port" {
   type        = number
   default     = 6379
 }
-variable "deploy_files_bucket_name" {
-  description = "deploy するファイルをアップロードする S3 Bucket 名"
-  type        = string
-}
-variable "server_port" {
-  description = "Web アプリケーションのポート番号"
-  type        = number
-  default     = 8080
-}
-
 variable "db_name" {
   description = "RDS に作成する Web アプリケーション用 DB名"
   type        = string
@@ -55,6 +49,25 @@ variable "db_username" {
 variable "db_password" {
   description = "RDS に作成する Web アプリケーション用 DB で使用するユーザのパスワード"
   type        = string
+}
+
+variable "redis_replicas_per_node_group" {
+  description = "aws_elasticache_replication_group resource の cluster_mode.replicas_per_node_group に指定する値"
+  type        = number
+}
+variable "redis_num_node_groups" {
+  description = "aws_elasticache_replication_group resource の cluster_mode.num_node_groups に指定する値"
+  type        = number
+}
+
+variable "deploy_files_bucket_name" {
+  description = "deploy するファイルをアップロードする S3 Bucket 名"
+  type        = string
+}
+variable "server_port" {
+  description = "Web アプリケーションのポート番号"
+  type        = number
+  default     = 8080
 }
 
 variable "create_rds" {
