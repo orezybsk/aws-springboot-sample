@@ -162,11 +162,12 @@ resource "aws_alb_target_group" "alb_http" {
   vpc_id   = aws_vpc.vpc.id
 
   health_check {
-    path                = "/"
-    protocol            = "HTTP"
-    port                = var.server_port
-    matcher             = 200
-    interval            = 30
+    path     = "/"
+    protocol = "HTTP"
+    port     = var.server_port
+    matcher  = 200
+    // 300秒（5分）は長い気がする。120秒（2分）くらいが妥当？
+    interval            = 300
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 2
