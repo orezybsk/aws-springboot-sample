@@ -22,3 +22,12 @@ resource "aws_iam_policy" "deploy_files" {
   name   = "deploy_files_policy"
   policy = data.aws_iam_policy_document.deploy_files.json
 }
+locals {
+  jar_path = format("%s/%s", var.build_libs_dir, var.jar_file)
+}
+resource "aws_s3_bucket_object" "upload_jar_file" {
+  bucket = aws_s3_bucket.deploy_files.id
+  key    = var.jar_file
+  source = local.jar_path
+  etag   = filemd5(local.jar_path)
+}

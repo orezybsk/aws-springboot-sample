@@ -208,7 +208,11 @@ resource "aws_security_group" "sg_asg" {
   }
 }
 resource "aws_launch_configuration" "asg" {
-  depends_on = [aws_ssm_parameter.SPRING_DATASOURCE_HIKARI_JDBC_URL, aws_ssm_parameter.SPRING_REDIS_CLUSTER_NODES]
+  depends_on = [
+    aws_ssm_parameter.SPRING_DATASOURCE_HIKARI_JDBC_URL,
+    aws_ssm_parameter.SPRING_REDIS_CLUSTER_NODES,
+    aws_s3_bucket_object.upload_jar_file
+  ]
 
   name_prefix                 = "${var.project_name}-asg-launch-configuration"
   image_id                    = data.aws_ami.recent_amazon_linux_2.image_id

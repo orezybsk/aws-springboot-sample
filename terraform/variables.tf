@@ -64,6 +64,14 @@ variable "deploy_files_bucket_name" {
   description = "deploy するファイルをアップロードする S3 Bucket 名"
   type        = string
 }
+variable "build_libs_dir" {
+  description = "sample-webapp の jar ファイルが生成される build/libs ディレクトリ"
+  type        = string
+}
+variable "jar_file" {
+  description = "sample-webapp の jar ファイル名"
+  type        = string
+}
 variable "server_port" {
   description = "Web アプリケーションのポート番号"
   type        = number
