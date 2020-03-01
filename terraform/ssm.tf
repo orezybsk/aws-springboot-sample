@@ -2,7 +2,7 @@
 // SSM Parameter Store
 //
 resource "aws_ssm_parameter" "SPRING_DATASOURCE_HIKARI_JDBC_URL" {
-  count = var.create_rds ? 1 : 0
+  depends_on = [aws_db_instance.this]
 
   # Requirements and Constraints for Parameter Names
   # https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-parameter-name-constraints.html
@@ -10,7 +10,7 @@ resource "aws_ssm_parameter" "SPRING_DATASOURCE_HIKARI_JDBC_URL" {
   name = "/springbootSample/${var.profile}/SPRING_DATASOURCE_HIKARI_JDBC_URL"
   type = "SecureString"
   value = format("jdbc:mysql://%s/%s?sslMode=DISABLED&characterEncoding=utf8",
-    element(split(":", aws_db_instance.this[count.index].endpoint), 0),
+    element(split(":", aws_db_instance.this.endpoint), 0),
     var.db_name
   )
   key_id = aws_kms_key.this.id
@@ -19,6 +19,8 @@ resource "aws_ssm_parameter" "SPRING_DATASOURCE_HIKARI_JDBC_URL" {
 # Call to function "element" failed: cannot read elements from set of string
 # https://github.com/hashicorp/terraform/issues/22392
 resource "aws_ssm_parameter" "SPRING_REDIS_CLUSTER_NODES" {
+  depends_on = [aws_elasticache_replication_group.this]
+
   count = (var.redis_replicas_per_node_group + 1) * var.redis_num_node_groups
 
   name = "/springbootSample/${var.profile}/SPRING_REDIS_CLUSTER_NODES_${count.index}"

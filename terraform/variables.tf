@@ -77,9 +77,3 @@ variable "server_port" {
   type        = number
   default     = 8080
 }
-
-variable "create_rds" {
-  description = "RDS(MySQL) を作成するか否かを指定するフラグ"
-  type        = bool
-  default     = true
-}

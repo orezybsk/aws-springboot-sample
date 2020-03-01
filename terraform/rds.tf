@@ -5,8 +5,6 @@
 // https://qiita.com/2no553/items/952dbb8df9a228195189
 //
 resource "aws_security_group" "sg_db" {
-  count = var.create_rds ? 1 : 0
-
   name   = "${var.project_name}-sg-db"
   vpc_id = aws_vpc.vpc.id
 
@@ -25,8 +23,6 @@ resource "aws_security_group" "sg_db" {
   }
 }
 resource "aws_db_parameter_group" "this" {
-  count = var.create_rds ? 1 : 0
-
   name   = "${var.project_name}-db-parameter-group"
   family = "mysql5.7"
 
@@ -85,14 +81,10 @@ resource "aws_db_parameter_group" "this" {
 //  }
 //}
 resource "aws_db_subnet_group" "this" {
-  count = var.create_rds ? 1 : 0
-
   name       = "${var.project_name}-db-subnet-group"
   subnet_ids = [aws_subnet.private_0.id, aws_subnet.private_1.id]
 }
 resource "aws_db_instance" "this" {
-  count = var.create_rds ? 1 : 0
-
   identifier = "${var.project_name}-db"
   engine     = "mysql"
   // Amazon RDS での MySQL
@@ -124,11 +116,11 @@ resource "aws_db_instance" "this" {
   final_snapshot_identifier = "${var.project_name}-db-final-snapshot"
   port                      = var.db_port
   apply_immediately         = false
-  vpc_security_group_ids    = [aws_security_group.sg_db[count.index].id]
-  parameter_group_name      = aws_db_parameter_group.this[count.index].name
+  vpc_security_group_ids    = [aws_security_group.sg_db.id]
+  parameter_group_name      = aws_db_parameter_group.this.name
   // ※翌日にならないと destroy が成功しなくなるので、aws_db_option_group はコメントアウトする。必要に応じて解除すること。
   // option_group_name = aws_db_option_group.this.name
-  db_subnet_group_name = aws_db_subnet_group.this[count.index].name
+  db_subnet_group_name = aws_db_subnet_group.this.name
 
   lifecycle {
     ignore_changes = [password]
@@ -136,7 +128,7 @@ resource "aws_db_instance" "this" {
 
   provisioner "local-exec" {
     command = format("echo 'modify_db_password_command: aws-vault exec $AWS_PROFILE -- bash -c \"aws rds modify-db-instance --apply-immediately --db-instance-identifier %s --master-user-password '%s'\"'",
-      aws_db_instance.this[count.index].identifier,
+      aws_db_instance.this.identifier,
       var.db_master_password
     )
   }
@@ -144,13 +136,11 @@ resource "aws_db_instance" "this" {
 // Resource: aws_db_event_subscription
 // https://www.terraform.io/docs/providers/aws/r/db_event_subscription.html
 resource "aws_db_event_subscription" "this" {
-  count = var.create_rds ? 1 : 0
-
   name      = "${var.project_name}-db-event"
   sns_topic = data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn
 
   source_type = "db-instance"
-  source_ids  = [aws_db_instance.this[count.index].id]
+  source_ids  = [aws_db_instance.this.id]
 
   // Using Amazon RDS Event Notification
   // https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_Events.html
@@ -184,14 +174,10 @@ data "aws_iam_policy_document" "assume_role_lambda" {
   }
 }
 resource "aws_iam_role" "rds_create_db" {
-  count = var.create_rds ? 1 : 0
-
   name               = "${var.project_name}-rdsCreateDb"
   assume_role_policy = data.aws_iam_policy_document.assume_role_lambda.json
 }
 resource "aws_cloudwatch_log_group" "rds_create_db_log" {
-  count = var.create_rds ? 1 : 0
-
   name              = "/aws/lambda/rdsCreateDb"
   retention_in_days = 3
 }
@@ -212,10 +198,8 @@ data "aws_iam_policy_document" "rds_create_db" {
   }
 }
 resource "aws_iam_role_policy" "rds_create_db" {
-  count = var.create_rds ? 1 : 0
-
   name   = "${var.project_name}-rdsCreateDb"
-  role   = aws_iam_role.rds_create_db[count.index].id
+  role   = aws_iam_role.rds_create_db.id
   policy = data.aws_iam_policy_document.rds_create_db.json
 }
 data "archive_file" "rds_create_db_zip" {
@@ -224,16 +208,14 @@ data "archive_file" "rds_create_db_zip" {
   source_dir  = "${path.module}/lambda/rdsCreateDb/"
 }
 resource "aws_lambda_function" "rds_create_db" {
-  count = var.create_rds ? 1 : 0
-
-  depends_on = [aws_cloudwatch_log_group.rds_create_db_log, aws_iam_role_policy.rds_create_db, "aws_db_instance.this[0]"]
+  depends_on = [aws_cloudwatch_log_group.rds_create_db_log, aws_iam_role_policy.rds_create_db, aws_db_instance.this]
 
   function_name    = "${var.project_name}-rdsCreateDb"
   handler          = "main.lambda_handler"
   filename         = data.archive_file.rds_create_db_zip.output_path
   source_code_hash = filebase64sha256(data.archive_file.rds_create_db_zip.output_path)
 
-  role    = aws_iam_role.rds_create_db[count.index].arn
+  role    = aws_iam_role.rds_create_db.arn
   runtime = "python3.8"
   timeout = 15
 
@@ -247,11 +229,11 @@ resource "aws_lambda_function" "rds_create_db" {
   // https://registry.terraform.io/modules/connect-group/lambda-exec/aws/1.0.2
   provisioner "local-exec" {
     command = format("aws lambda invoke --function-name %s --payload '%s' response.json",
-      aws_lambda_function.rds_create_db[count.index].function_name,
+      aws_lambda_function.rds_create_db.function_name,
       jsonencode(merge(map(
         // RDS exported attribute 'endpoint' should not include port number
         // https://github.com/hashicorp/terraform/issues/4996
-        "RDS_ENDPOINT", element(split(":", aws_db_instance.this[count.index].endpoint), 0),
+        "RDS_ENDPOINT", element(split(":", aws_db_instance.this.endpoint), 0),
         "DB_MASTER_USERNAME", var.db_master_username,
         "DB_MASTER_PASSWORD", var.db_master_password_tmp,
         "DB_NAME", var.db_name,
