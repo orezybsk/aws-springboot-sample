@@ -14,7 +14,9 @@ AWS で EC2＋RDS＋ElastiCache 構成のサンプルを作成する
 
 ## 残件
 
-* ElastiCache(Redis)は、
-  * 通信も SSL にしたい。
-  * https://github.com/azavea/terraform-aws-redis-elasticache を参考にする？
-* ASG, RDS の監視アラームを SNS で送信するようにしたい。
+* terraform apply 実行後に ALB の URL にアクセスしても 502 Bad Gateway になることがある。
+* RDS, ElastiCache(Redis)は、
+  * 通信を SSL にしたい。
+* CodeCommit, CodeBuild, CodeDeploy, CodePipeline を使ってリリースするようにしたい。
+  * https://docs.aws.amazon.com/codepipeline/latest/userguide/tutorials-simple-codecommit.html
+  * https://docs.aws.amazon.com/codepipeline/latest/userguide/tutorials-simple-codecommit.html

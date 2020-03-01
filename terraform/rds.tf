@@ -256,3 +256,113 @@ resource "aws_lambda_function" "rds_create_db" {
 
 // Running Setup SQL scripts on an RDS instance within a VPC, via Terraform
 // https://gist.github.com/pat/7b61376981b40cfdbb1166734b8d184f
+
+///////////////////////////////////////////////////////////////////////////////
+// CloudWatch
+//
+// cloudposse / terraform-aws-rds-cloudwatch-sns-alarms
+// https://github.com/cloudposse/terraform-aws-rds-cloudwatch-sns-alarms
+// lorenzoaiello / terraform-aws-rds-alarms
+// https://github.com/lorenzoaiello/terraform-aws-rds-alarms/blob/master/main.tf
+resource "aws_cloudwatch_metric_alarm" "burst_balance_too_low" {
+  alarm_name          = format("alarm-RDS-BurstBalance(%s)", aws_db_instance.this.name)
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "BurstBalance"
+  namespace           = "AWS/RDS"
+  period              = 600
+  statistic           = "Average"
+  threshold           = 20
+  alarm_description   = "Average database storage burst balance is too low, expect a significant performance drop soon"
+  alarm_actions       = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+  ok_actions          = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.this.identifier
+  }
+}
+resource "aws_cloudwatch_metric_alarm" "cpu_utilization_too_high" {
+  alarm_name          = format("alarm-RDS-CPUUtilization(%s)", aws_db_instance.this.name)
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/RDS"
+  period              = 600
+  statistic           = "Average"
+  threshold           = 80
+  alarm_description   = "Average database CPU utilization is too high."
+  alarm_actions       = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+  ok_actions          = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.this.identifier
+  }
+}
+resource "aws_cloudwatch_metric_alarm" "disk_queue_depth_too_high" {
+  alarm_name          = format("alarm-RDS-DiskQueueDepth(%s)", aws_db_instance.this.name)
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "DiskQueueDepth"
+  namespace           = "AWS/RDS"
+  period              = 600
+  statistic           = "Average"
+  threshold           = 64
+  alarm_description   = "Average database disk queue depth is too high, performance may suffer"
+  alarm_actions       = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+  ok_actions          = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.this.identifier
+  }
+}
+resource "aws_cloudwatch_metric_alarm" "freeable_memory_too_low" {
+  alarm_name          = format("alarm-RDS-FreeableMemory(%s)", aws_db_instance.this.name)
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "FreeableMemory"
+  namespace           = "AWS/RDS"
+  period              = 600
+  statistic           = "Average"
+  threshold           = 64000000
+  alarm_description   = "Average database freeable memory is too low, performance may suffer"
+  alarm_actions       = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+  ok_actions          = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.this.identifier
+  }
+}
+resource "aws_cloudwatch_metric_alarm" "free_storage_space_too_low" {
+  alarm_name          = format("alarm-RDS-FreeStorageSpace(%s)", aws_db_instance.this.name)
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "FreeStorageSpace"
+  namespace           = "AWS/RDS"
+  period              = 600
+  statistic           = "Average"
+  threshold           = 2000000000
+  alarm_description   = "Average database free storage space is too low"
+  alarm_actions       = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+  ok_actions          = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.this.identifier
+  }
+}
+resource "aws_cloudwatch_metric_alarm" "swap_usage_too_high" {
+  alarm_name          = format("alarm-RDS-SwapUsage(%s)", aws_db_instance.this.name)
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "SwapUsage"
+  namespace           = "AWS/RDS"
+  period              = 600
+  statistic           = "Average"
+  threshold           = 256000000
+  alarm_description   = "Average database swap usage is too high, performance may suffer"
+  alarm_actions       = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+  ok_actions          = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.this.identifier
+  }
+}
