@@ -83,8 +83,3 @@ variable "create_rds" {
   type        = bool
   default     = true
 }
-variable "create_elasticache" {
-  description = "ElastiCache(Redis) を作成するか否かを指定するフラグ"
-  type        = bool
-  default     = true
-}

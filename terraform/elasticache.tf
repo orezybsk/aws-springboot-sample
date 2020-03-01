@@ -7,8 +7,6 @@
 // https://github.com/terraform-community-modules/tf_aws_elasticache_redis
 // ※作成中に見つけたのでメモ書きしておく。
 resource "aws_security_group" "sg_redis" {
-  count = var.create_elasticache ? 1 : 0
-
   name   = "${var.project_name}-sg-redis"
   vpc_id = aws_vpc.vpc.id
 
@@ -41,14 +39,10 @@ resource "aws_elasticache_parameter_group" "this" {
   }
 }
 resource "aws_elasticache_subnet_group" "this" {
-  count = var.create_elasticache ? 1 : 0
-
   name       = "${var.project_name}-redis-subnet-group"
   subnet_ids = [aws_subnet.private_0.id, aws_subnet.private_1.id]
 }
 resource "aws_elasticache_replication_group" "this" {
-  count = var.create_elasticache ? 1 : 0
-
   replication_group_id          = "${var.project_name}-rep-group"
   replication_group_description = "${var.project_name} replication group"
   // Redis のノードタイプ固有のパラメータ
@@ -62,12 +56,12 @@ resource "aws_elasticache_replication_group" "this" {
   // parameter_group_name = "default.redis5.0.cluster.on"
   parameter_group_name       = aws_elasticache_parameter_group.this.name
   automatic_failover_enabled = true
-  subnet_group_name          = aws_elasticache_subnet_group.this[count.index].name
+  subnet_group_name          = aws_elasticache_subnet_group.this.name
   snapshot_window            = "17:10-18:10"
   snapshot_retention_limit   = 7
   maintenance_window         = "Mon:18:10-Mon:19:10"
   apply_immediately          = false
-  security_group_ids         = [aws_security_group.sg_redis[count.index].id]
+  security_group_ids         = [aws_security_group.sg_redis.id]
 
   cluster_mode {
     replicas_per_node_group = 1
@@ -85,9 +79,9 @@ resource "aws_elasticache_replication_group" "this" {
 // azavea / terraform-aws-redis-elasticache
 // https://github.com/azavea/terraform-aws-redis-elasticache/blob/develop/main.tf
 resource "aws_cloudwatch_metric_alarm" "redis_cpu" {
-  count = var.create_elasticache ? (var.redis_replicas_per_node_group + 1) * var.redis_num_node_groups : 0
+  count = (var.redis_replicas_per_node_group + 1) * var.redis_num_node_groups
 
-  alarm_name          = format("alarm-ElastiCache-CPUUtilization(%s)", sort(aws_elasticache_replication_group.this[0].member_clusters)[count.index])
+  alarm_name          = format("alarm-ElastiCache-CPUUtilization(%s)", sort(aws_elasticache_replication_group.this.member_clusters)[count.index])
   alarm_description   = "Redis Cluster CPU utilization"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
@@ -99,16 +93,16 @@ resource "aws_cloudwatch_metric_alarm" "redis_cpu" {
   threshold = 70
 
   dimensions = {
-    CacheClusterId = sort(aws_elasticache_replication_group.this[0].member_clusters)[count.index]
+    CacheClusterId = sort(aws_elasticache_replication_group.this.member_clusters)[count.index]
   }
 
   alarm_actions = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]
 }
 
 resource "aws_cloudwatch_metric_alarm" "redis_freememory" {
-  count = var.create_elasticache ? (var.redis_replicas_per_node_group + 1) * var.redis_num_node_groups : 0
+  count = (var.redis_replicas_per_node_group + 1) * var.redis_num_node_groups
 
-  alarm_name          = format("alarm-ElastiCache-FreeableMemory(%s)", sort(aws_elasticache_replication_group.this[0].member_clusters)[count.index])
+  alarm_name          = format("alarm-ElastiCache-FreeableMemory(%s)", sort(aws_elasticache_replication_group.this.member_clusters)[count.index])
   alarm_description   = "Redis Cluster freeable memory"
   comparison_operator = "LessThanOrEqualToThreshold"
   evaluation_periods  = 1
@@ -120,7 +114,7 @@ resource "aws_cloudwatch_metric_alarm" "redis_freememory" {
   threshold = 294205259
 
   dimensions = {
-    CacheClusterId = sort(aws_elasticache_replication_group.this[0].member_clusters)[count.index]
+    CacheClusterId = sort(aws_elasticache_replication_group.this.member_clusters)[count.index]
   }
 
   alarm_actions = [data.terraform_remote_state.remote_sns_email.outputs.sns_email_arn]

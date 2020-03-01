@@ -19,14 +19,14 @@ resource "aws_ssm_parameter" "SPRING_DATASOURCE_HIKARI_JDBC_URL" {
 # Call to function "element" failed: cannot read elements from set of string
 # https://github.com/hashicorp/terraform/issues/22392
 resource "aws_ssm_parameter" "SPRING_REDIS_CLUSTER_NODES" {
-  count = var.create_elasticache ? (var.redis_replicas_per_node_group + 1) * var.redis_num_node_groups : 0
+  count = (var.redis_replicas_per_node_group + 1) * var.redis_num_node_groups
 
   name = "/springbootSample/${var.profile}/SPRING_REDIS_CLUSTER_NODES_${count.index}"
   type = "SecureString"
   value = format("%s.%s:%s",
-    sort(aws_elasticache_replication_group.this[0].member_clusters)[count.index],
-    replace(replace(aws_elasticache_replication_group.this[0].configuration_endpoint_address,
-      format("%s.", aws_elasticache_replication_group.this[0].replication_group_id), ""
+    sort(aws_elasticache_replication_group.this.member_clusters)[count.index],
+    replace(replace(aws_elasticache_replication_group.this.configuration_endpoint_address,
+      format("%s.", aws_elasticache_replication_group.this.replication_group_id), ""
     ), "clustercfg", "0001"),
     var.redis_port
   )
